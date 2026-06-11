@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <meta name="robots" content="none" />
+  <title>Админ — выдача кода</title>
+  <link rel="stylesheet" href="admin-panel.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Админ — выдача кода</h1>
+    <p class="sub">Управление ключами, активностью и уведомлениями</p>
+
+    <div class="card" id="loginCard">
+      <label>Логин</label>
+      <input id="loginInput" type="text" placeholder="admin" autocomplete="username" />
+      <label style="margin-top:10px">Пароль</label>
+      <input id="passwordInput" type="password" placeholder="Пароль" autocomplete="current-password" />
+      <button class="btn btn-dark" id="loginBtn" type="button">Войти</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="tabs" id="tabs"></div>
+
+      <div class="card panel" data-panel="keys">
+        <div class="login-bar" id="loginBar"></div>
+        <label>Название аккаунта или номер чека</label>
+        <input id="labelInput" type="text" placeholder="например: Мой / Бомж / чек 123" />
+        <label style="margin-top:10px">Срок доступа после активации</label>
+        <select id="durationSelect">
+          <option value="7d">7 дней</option>
+          <option value="30d">30 дней</option>
+          <option value="6m">6 месяцев</option>
+          <option value="1y">1 год</option>
+          <option value="forever" selected>Навсегда</option>
+        </select>
+        <button class="btn btn-dark" id="createBtn" type="button">Создать одноразовый код</button>
+
+        <div id="newCodeBox" class="hidden" style="margin-top:14px">
+          <div class="code-hint">Код (живёт 5 минут, одноразовый)</div>
+          <div class="code-big" id="newCode">000000</div>
+          <div class="pills" id="newPills"></div>
+          <button class="btn btn-blue" id="copyBtn" type="button">Скопировать</button>
+        </div>
+
+        <div class="section-title" style="margin-top:18px">Ваша статистика</div>
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="section-title" style="margin-top:18px">Выданные вами ключи</div>
+        <div id="historyList"></div>
+      </div>
+
+      <div class="card panel hidden" data-panel="activity">
+        <div class="section-title">Самые активные пользователи</div>
+        <div class="period-row">
+          <button class="period-btn" data-period="7d" type="button">7 дней</button>
+          <button class="period-btn active" data-period="30d" type="button">30 дней</button>
+          <button class="period-btn" data-period="1y" type="button">1 год</button>
+          <button class="period-btn" data-period="forever" type="button">Навсегда</button>
+        </div>
+        <div id="activityList"></div>
+      </div>
+
+      <div class="card panel hidden" data-panel="admins">
+        <div class="section-title">Добавить админа</div>
+        <label>Логин</label>
+        <input id="newAdminLogin" type="text" placeholder="новый логин" />
+        <label style="margin-top:10px">Пароль</label>
+        <input id="newAdminPass" type="password" placeholder="пароль" />
+        <button class="btn btn-dark" id="addAdminBtn" type="button">Добавить админа</button>
+        <div class="section-title" style="margin-top:18px">Список админов</div>
+        <div id="adminsList"></div>
+      </div>
+
+      <div class="card panel hidden" data-panel="admin-activity">
+        <div class="section-title">Активность админов</div>
+        <div id="adminChips"></div>
+        <div id="adminActList" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card panel hidden" data-panel="notify">
+        <div class="section-title">Объявление для всех</div>
+        <label>Заголовок</label>
+        <input id="broadcastTitle" type="text" placeholder="Акция!" />
+        <label style="margin-top:10px">Текст</label>
+        <textarea id="broadcastText" placeholder="Успейте купить..."></textarea>
+        <button class="btn btn-dark" id="sendBroadcastBtn" type="button">Отправить всем</button>
+        <p class="row-meta" style="margin-top:10px">После закрытия у пользователя не покажется, пока не отправите новое.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg hidden" id="userModal">
+    <div class="modal">
+      <div class="profile-head">
+        <h2 id="userModalTitle">Профиль</h2>
+        <button class="btn btn-ghost" id="closeUserModal" type="button">✕</button>
+      </div>
+      <div id="userModalBody"></div>
+    </div>
+  </div>
+
+  <script src="admin-panel.js"></script>
+</body>
+</html>
