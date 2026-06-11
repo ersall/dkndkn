@@ -1,25 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,maximum-scale=1">
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="none">
-
   <title>Получение доступа</title>
-
-  <!-- favicon -->
-  <link rel="icon" href="/main/kaspi.kz_files/favicon.ico">
-
-  <!-- iOS / PWA -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Kaspi.kz">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" sizes="180x180" href="/main/img/1024x1024bb.png">
-
+  <link rel="icon" href="favicon.ico">
   <style>
-    body{
+    body {
       font-family: system-ui,-apple-system,Arial,sans-serif;
       margin:0;
       min-height:100vh;
@@ -28,7 +17,7 @@
       justify-content:center;
       background:#f5f6f8;
     }
-    .box{
+    .box {
       width:min(420px, 92vw);
       background:#fff;
       border-radius:14px;
@@ -36,33 +25,38 @@
       box-shadow:0 10px 30px rgba(0,0,0,.08);
       text-align:center;
     }
-    .logo{
+    .logo {
       width:88px;
       height:88px;
       margin:0 auto 12px;
       border-radius:20px;
       overflow:hidden;
     }
-    .logo img{
+    .logo img {
       width:100%;
       height:100%;
       object-fit:cover;
     }
-    h3{margin:0 0 8px}
-    p{margin:0 0 16px; color:#555; font-size:14px; line-height:1.35}
-    input{
+    h3 { margin:0 0 8px; font-size:20px; font-weight:600; }
+    p { margin:0 0 16px; color:#555; font-size:14px; line-height:1.35; }
+    input {
       width:100%;
       box-sizing:border-box;
       padding:14px 12px;
       border-radius:12px;
       border:1px solid #d9dce3;
       outline:none;
-      font-size:16px;
+      font-size:24px;
       text-align:center;
-      letter-spacing:3px;
+      letter-spacing:8px;
+      font-weight:700;
+      color:#1f1f1f;
     }
-    input:focus{border-color:#6aa9ff; box-shadow:0 0 0 3px rgba(106,169,255,.18)}
-    .btn{
+    input:focus {
+      border-color:#f14635;
+      box-shadow:0 0 0 3px rgba(241,70,53,.18);
+    }
+    .btn {
       width:100%;
       box-sizing:border-box;
       padding:14px 12px;
@@ -73,118 +67,79 @@
       font-weight:600;
       margin-top:10px;
     }
-    .btn-primary{background:#111; color:#fff}
-    .btn-primary:active{transform:translateY(1px)}
-    .btn-tg{
-      display:block;
-      text-decoration:none;
-      background:#0088cc;
-      color:#fff;
-      line-height:20px;
-      text-align:center;
-    }
-    .sep{
-      margin:14px 0 10px;
-      height:1px;
-      background:#eceef2;
-    }
-    #st{
-      margin-top:12px;
-      font-size:14px;
-      color:#111;
-      min-height:18px;
-    }
-    .muted{opacity:.7}
+    .btn-primary { background:#f14635; color:#fff; }
+    .btn-primary:active { transform:translateY(1px); background:#d73e2f; }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
+    #st { margin-top:12px; font-size:14px; min-height:18px; }
+    .sep { margin:14px 0 10px; height:1px; background:#eceef2; }
+    .muted { opacity:.7; }
   </style>
 </head>
 <body>
   <div class="box">
-
-    <!-- ЛОГО -->
     <div class="logo">
-      <img src="/main/img/1024x1024bb.png" alt="Kaspi.kz">
+      <img src="1024x1024bb.png" alt="Kaspi.kz">
     </div>
-
     <h3>Получение доступа</h3>
     <p>Введите одноразовый код (6 цифр), который вы получили у администратора.</p>
-
-    <input id="code" placeholder="------" inputmode="numeric" maxlength="6" />
-
+    <input id="code" placeholder="------" inputmode="numeric" maxlength="6" autofocus />
     <button class="btn btn-primary" id="go">Подтвердить код</button>
-
     <div id="st" class="muted"></div>
-
     <div class="sep"></div>
-
-    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px; margin: 10px 0; font-size: 13px; color: #856404;">
-      <strong>⚠️ Важно:</strong> Если вы купили код и у вас вылетело, то напишите @Chris_kz — не пишите другим, так как вас могут скамнуть
-    </div>
-
-    <p class="muted">Нет кода — напишите в Telegram для получения доступа</p>
-    <a class="btn btn-tg" href="https://t.me/Chris_kz" target="_blank" rel="noopener">
-      Написать @Chris_kz
+    <p class="muted">Нет кода - напишите в Telegram для получения доступа</p>
+    <a class="btn btn-primary" style="background:#0088cc; display:block; text-decoration:none; color:#fff; line-height:20px; text-align:center;" href="https://t.me/alexa_martine" target="_blank">
+      Написать @alexa_martine
     </a>
   </div>
 
-  <script>
-    fetch("/.netlify/functions/logout", { credentials: "include" }).catch(function () {});
+<script>
+  const st = document.getElementById("st");
+  const input = document.getElementById("code");
+  const btn = document.getElementById("go");
 
-    const st = document.getElementById("st");
-    const input = document.getElementById("code");
-    const btn = document.getElementById("go");
+  function onlyDigits(s){ return s.replace(/\D+/g, ""); }
 
-    function onlyDigits(s){ return s.replace(/\D+/g, ""); }
+  input.addEventListener("input", () => {
+    input.value = onlyDigits(input.value).slice(0, 6);
+  });
 
-    input.addEventListener("input", () => {
-      input.value = onlyDigits(input.value).slice(0, 6);
-    });
+  btn.onclick = async () => {
+    const code = input.value.trim();
+    if (code.length !== 6) {
+      st.textContent = "Введите 6 цифр.";
+      return;
+    }
 
-    btn.onclick = async () => {
-      const code = input.value.trim();
-      if (code.length !== 6) {
-        st.textContent = "Введите 6 цифр.";
-        return;
-      }
+    btn.disabled = true;
+    st.textContent = "Проверяем код...";
 
-      btn.disabled = true;
-      st.textContent = "Проверяем код...";
+    try {
+      const r = await fetch("/.netlify/functions/bind", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ code }),
+        credentials: "include"
+      });
 
-      try {
-        const r = await fetch("/.netlify/functions/bind", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ code }),
-          credentials: "include"
-        });
+      const data = await r.json();
 
-        if (r.ok) {
-          st.textContent = "Доступ получен. Откройте сайт заново.";
-          setTimeout(() => location.href = "/", 800);
-        } else {
-          const responseText = await r.text();
-          let errorData;
-          
-          try {
-            errorData = JSON.parse(responseText);
-          } catch {
-            errorData = { error: responseText };
-          }
-          
-          if (errorData.error === "key_blocked") {
-            // Ключ заблокирован - перенаправляем на страницу блокировки
-            location.href = "/blocked.html";
-            return;
-          }
-          
-          st.textContent = "Неверный или истёкший код. Напишите администратору.";
+      if (r.ok) {
+        st.textContent = "Доступ получен. Открываем...";
+        localStorage.setItem('access_granted', 'true');
+        document.cookie = 'access_granted=1; path=/; max-age=31536000; SameSite=Lax';
+        if (data.name) {
+          document.cookie = `access_name=${data.name}; path=/; max-age=31536000; SameSite=Lax`;
         }
-      } catch {
-        st.textContent = "Ошибка сети. Попробуйте ещё раз.";
-      } finally {
-        btn.disabled = false;
+        setTimeout(() => location.href = "/", 500);
+      } else {
+        st.textContent = "Неверный или истёкший код.";
       }
-    };
-  </script>
-<script src="anti-capture.js"></script>
+    } catch {
+      st.textContent = "Ошибка сети. Попробуйте ещё раз.";
+    } finally {
+      btn.disabled = false;
+    }
+  };
+</script>
 </body>
 </html>
