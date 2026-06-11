@@ -1324,4 +1324,25 @@ if (titleEl3) {
   </script>
 
 
-</body></html>
+</body><div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:9999;display:flex;flex-direction:column;">
+  <div style="width:100%;height:3px;background:#f0f0f0;"><div id="progress-bar" style="width:0;height:100%;background:#f14635;transition:width 1.5s linear;"></div></div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+    <img src="../loading.png" style="width:100%;max-width:400px;object-fit:contain;" id="loading-photo" alt="Загрузка">
+  </div>
+</div>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('loading-overlay');
+  var bar = document.getElementById('progress-bar');
+  overlay.style.display = 'flex';
+  bar.style.width = '0%';
+  setTimeout(function() {
+    bar.style.width = '100%';
+    setTimeout(function() {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s';
+      setTimeout(function() { overlay.style.display = 'none'; }, 300);
+    }, 900);
+  }, 10);
+});
+</script></html>
