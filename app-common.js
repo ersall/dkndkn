@@ -115,22 +115,88 @@
         e.preventDefault();
         const tab = item.getAttribute("data-tab");
         if (tab === activeTab) return;
-        sessionStorage.setItem("kaspi_tab_nav", "1");
-        document.body.classList.add("page-transition-out");
-        setTimeout(function () {
-          if (tab === "home") location.href = "/";
-          else if (tab === "services") location.href = "/serv.html";
-        }, 260);
+        if (tab === "home") global.KaspiNav.navigateTo("/");
+        else if (tab === "services") global.KaspiNav.navigateTo("/serv.html");
       });
     });
   }
 
   function initPageEnter() {
-    if (sessionStorage.getItem("kaspi_tab_nav") === "1") {
+    if (
+      sessionStorage.getItem("kaspi_page_nav") === "1" ||
+      sessionStorage.getItem("kaspi_tab_nav") === "1"
+    ) {
+      sessionStorage.removeItem("kaspi_page_nav");
       sessionStorage.removeItem("kaspi_tab_nav");
       document.documentElement.classList.add("page-transition-in");
+      window.setTimeout(function () {
+        document.documentElement.classList.remove("page-transition-in");
+      }, 380);
     }
   }
+
+  function getPageRoot() {
+    return document.querySelector(
+      ".app-wrapper, .services-page, .pay-app, .bank-app, .msg-page"
+    );
+  }
+
+  function navigateTo(url) {
+    if (!url) return;
+    var target = url.split("?")[0];
+    var current = location.pathname.split("/").pop() || "index.html";
+    if (target === "/" || target === "") target = "index.html";
+    if (target === current || (target === "index.html" && (current === "" || current === "/"))) {
+      return;
+    }
+    sessionStorage.setItem("kaspi_page_nav", "1");
+    var root = getPageRoot();
+    if (root) root.classList.add("page-transition-out");
+    else document.body.classList.add("page-transition-out");
+    window.setTimeout(function () {
+      location.href = url;
+    }, 260);
+  }
+
+  function initGlobalLinks() {
+    document.querySelectorAll("[data-open-bank]").forEach(function (el) {
+      el.onclick = function (e) {
+        e.preventDefault();
+        navigateTo("bank.html");
+      };
+    });
+    document.querySelectorAll("[data-open-payments]").forEach(function (el) {
+      el.onclick = function (e) {
+        e.preventDefault();
+        navigateTo("payments.html");
+      };
+    });
+    document.querySelectorAll("[data-open-messages]").forEach(function (el) {
+      el.onclick = function (e) {
+        e.preventDefault();
+        navigateTo("messages.html");
+      };
+    });
+    document.querySelectorAll(".pay-nav a[href]").forEach(function (a) {
+      var href = a.getAttribute("href");
+      if (!href || href === "#") return;
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        navigateTo(href);
+      });
+    });
+  }
+
+  global.KaspiNav = {
+    navigateTo: navigateTo,
+    initPageEnter: initPageEnter,
+    initGlobalLinks: initGlobalLinks,
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initPageEnter();
+    initGlobalLinks();
+  });
 
   global.KaspiProfile = {
     getName,
@@ -149,32 +215,102 @@
     var s = document.createElement("style");
     s.id = "kaspi-notify-style";
     s.textContent =
-      ".kaspi-notify-overlay{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;animation:knFade .25s ease}" +
-      ".kaspi-notify-card{width:min(360px,100%);background:#fff;border-radius:20px;padding:22px 20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;font-family:system-ui,-apple-system,sans-serif}" +
-      ".kaspi-notify-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;border-radius:50%;background:#f3f4f6;cursor:pointer;font-size:18px;line-height:1}" +
-      ".kaspi-notify-title{font-size:18px;font-weight:800;margin:0 28px 10px 0;color:#111}" +
-      ".kaspi-notify-text{font-size:14px;line-height:1.45;color:#4b5563;margin:0;white-space:pre-wrap}" +
-      "@keyframes knFade{from{opacity:0}to{opacity:1}}";
+      ".kaspi-notify-wrap{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;z-index:2147483000;width:calc(100% - 28px);max-width:340px;transform:translateX(-50%) translateY(calc(-100% - 20px));transition:transform .36s cubic-bezier(.2,.8,.2,1);pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}" +
+      ".kaspi-notify-wrap.is-visible{transform:translateX(-50%) translateY(0);pointer-events:auto}" +
+      ".kaspi-notify-banner{background:#fff;border-radius:16px;padding:13px 12px 13px 14px;box-shadow:0 10px 36px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.06);display:flex;gap:10px;align-items:flex-start}" +
+      ".kaspi-notify-banner-body{flex:1;min-width:0;padding-top:1px}" +
+      ".kaspi-notify-banner-title{font-size:14px;font-weight:700;margin:0 0 3px;color:#111;line-height:1.25;letter-spacing:-.01em}" +
+      ".kaspi-notify-banner-text{font-size:13px;line-height:1.35;color:#636366;margin:0;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}" +
+      ".kaspi-notify-banner-close{flex-shrink:0;width:28px;height:28px;border:none;border-radius:50%;background:#f2f2f7;color:#8e8e93;font-size:18px;line-height:1;cursor:pointer;margin-top:-2px}";
     document.head.appendChild(s);
   }
 
-  function showNotification(n, type) {
-    if (!n || !n.id) return;
+  var PIN_UNLOCK_KEY = "kaspi_pin_unlocked";
+  var DISMISS_KEY = "kaspi_dismissed_notify";
+  var pendingNotification = null;
+  var pendingNotificationType = null;
+
+  function getDismissedIds() {
+    try {
+      var raw = localStorage.getItem(DISMISS_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function isNotificationDismissed(id) {
+    if (!id) return false;
+    return getDismissedIds().indexOf(id) >= 0;
+  }
+
+  function markNotificationDismissed(id) {
+    if (!id) return;
+    try {
+      var list = getDismissedIds();
+      if (list.indexOf(id) < 0) list.push(id);
+      if (list.length > 80) list = list.slice(-80);
+      localStorage.setItem(DISMISS_KEY, JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  function isPinPage() {
+    return !!document.getElementById("pinScreen");
+  }
+
+  function isPinLocked() {
+    if (document.body && document.body.classList.contains("pin-locked")) return true;
+    var pin = document.getElementById("pinScreen");
+    return !!(pin && pin.classList.contains("active"));
+  }
+
+  function canShowNotificationNow() {
+    if (/\/(bind|blocked|admin)\.html$/i.test(location.pathname)) return false;
+    if (isPinPage()) {
+      if (!global.KaspiPin || !global.KaspiPin.isUnlocked()) return false;
+    }
+    if (isPinLocked()) return false;
+    return true;
+  }
+
+  function queueNotification(n, type) {
+    if (!n || !n.id || isNotificationDismissed(n.id)) return;
+    pendingNotification = n;
+    pendingNotificationType = type || "global";
+  }
+
+  function applyServerBalance(data) {
+    if (!data || data.balance == null) return;
+    if (global.KaspiWallet && global.KaspiWallet.applyServerBalance) {
+      global.KaspiWallet.applyServerBalance(data.balance);
+    }
+  }
+
+  function renderNotificationBanner(n, type) {
+    if (!n || !n.id || isNotificationDismissed(n.id)) return;
     injectNotifyStyles();
-    var old = document.getElementById("kaspiNotifyOverlay");
+    var old = document.getElementById("kaspiNotifyWrap");
     if (old) old.remove();
-    var overlay = document.createElement("div");
-    overlay.id = "kaspiNotifyOverlay";
-    overlay.className = "kaspi-notify-overlay";
-    overlay.innerHTML =
-      '<div class="kaspi-notify-card">' +
-      '<button type="button" class="kaspi-notify-close" aria-label="Закрыть">×</button>' +
-      '<h3 class="kaspi-notify-title"></h3>' +
-      '<p class="kaspi-notify-text"></p></div>';
-    overlay.querySelector(".kaspi-notify-title").textContent = n.title || "Уведомление";
-    overlay.querySelector(".kaspi-notify-text").textContent = n.text || "";
+    var wrap = document.createElement("div");
+    wrap.id = "kaspiNotifyWrap";
+    wrap.className = "kaspi-notify-wrap";
+    wrap.innerHTML =
+      '<div class="kaspi-notify-banner">' +
+      '<div class="kaspi-notify-banner-body">' +
+      '<h3 class="kaspi-notify-banner-title"></h3>' +
+      '<p class="kaspi-notify-banner-text"></p></div>' +
+      '<button type="button" class="kaspi-notify-banner-close" aria-label="Закрыть">×</button></div>';
+    wrap.querySelector(".kaspi-notify-banner-title").textContent = n.title || "Уведомление";
+    wrap.querySelector(".kaspi-notify-banner-text").textContent = n.text || "";
     function dismiss() {
-      overlay.remove();
+      markNotificationDismissed(n.id);
+      if (pendingNotification && pendingNotification.id === n.id) {
+        pendingNotification = null;
+        pendingNotificationType = null;
+      }
+      wrap.classList.remove("is-visible");
+      setTimeout(function () { wrap.remove(); }, 320);
       fetch("/.netlify/functions/check-access", {
         method: "POST",
         credentials: "include",
@@ -186,21 +322,48 @@
         }),
       }).catch(function () {});
     }
-    overlay.querySelector(".kaspi-notify-close").onclick = dismiss;
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) dismiss();
+    wrap.querySelector(".kaspi-notify-banner-close").onclick = dismiss;
+    document.body.appendChild(wrap);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        wrap.classList.add("is-visible");
+      });
     });
-    document.body.appendChild(overlay);
+  }
+
+  function showNotification(n, type) {
+    if (!n || !n.id || isNotificationDismissed(n.id)) return;
+    if (!canShowNotificationNow()) {
+      queueNotification(n, type);
+      return;
+    }
+    renderNotificationBanner(n, type);
+  }
+
+  function flushPendingNotification() {
+    if (!pendingNotification || !canShowNotificationNow()) return;
+    if (isNotificationDismissed(pendingNotification.id)) {
+      pendingNotification = null;
+      pendingNotificationType = null;
+      return;
+    }
+    var n = pendingNotification;
+    var t = pendingNotificationType;
+    pendingNotification = null;
+    pendingNotificationType = null;
+    renderNotificationBanner(n, t);
   }
 
   async function checkAccessAndNotify(page) {
+    if (isLocalDev()) return localAccessOk();
     if (/\/(bind|blocked|admin)\.html$/i.test(location.pathname)) return null;
     try {
       var url = "/.netlify/functions/check-access?page=" + encodeURIComponent(page || "site");
       var r = await fetch(url, { credentials: "include" });
       if (!r.ok) return null;
       var data = await r.json();
-      if (data.notification) {
+      applyServerBalance(data);
+      if (data.notification && !isNotificationDismissed(data.notification.id)) {
         showNotification(data.notification, data.notificationType);
       }
       return data;
@@ -210,16 +373,110 @@
   }
 
   function initNotifications(page) {
+    if (isLocalDev()) return;
     if (/\/(bind|blocked|admin)\.html$/i.test(location.pathname)) return;
+    if (isPinPage() && !global.KaspiPin.isUnlocked()) return;
     checkAccessAndNotify(page);
     setInterval(function () {
       checkAccessAndNotify(page);
-    }, 45000);
+    }, 120000);
   }
 
   global.KaspiNotify = {
-    showNotification,
-    checkAccessAndNotify,
-    initNotifications,
+    showNotification: showNotification,
+    checkAccessAndNotify: checkAccessAndNotify,
+    initNotifications: initNotifications,
+    flushPending: flushPendingNotification,
+  };
+
+  global.KaspiPin = {
+    isUnlocked: function () {
+      try { return sessionStorage.getItem(PIN_UNLOCK_KEY) === "1"; } catch (_) { return false; }
+    },
+    unlock: function () {
+      try { sessionStorage.setItem(PIN_UNLOCK_KEY, "1"); } catch (_) {}
+      if (document.body) document.body.classList.remove("pin-locked");
+      var pin = document.getElementById("pinScreen");
+      if (pin) pin.classList.remove("active");
+      flushPendingNotification();
+      try {
+        document.dispatchEvent(new CustomEvent("kaspi:pin-unlock"));
+      } catch (_) {}
+    },
+    shouldShowPin: function () {
+      return isPinPage() && !this.isUnlocked();
+    },
+    isLocked: isPinLocked,
+  };
+
+  function isLocalDev() {
+    var h = location.hostname;
+    return (
+      h === "localhost" ||
+      h === "127.0.0.1" ||
+      h === "[::1]" ||
+      location.search.indexOf("dev=1") !== -1
+    );
+  }
+
+  function localAccessOk() {
+    return { hasAccess: true, blocked: false, expired: false, notification: null };
+  }
+
+  function applyAccessResult(data) {
+    if (!data) return true;
+    applyServerBalance(data);
+    if (data.blocked) {
+      location.href = "/blocked.html";
+      return false;
+    }
+    if (!data.hasAccess) {
+      location.href = "/bind.html";
+      return false;
+    }
+    if (window.KaspiNotify && data.notification && !isNotificationDismissed(data.notification.id)) {
+      showNotification(data.notification, data.notificationType);
+    }
+    return true;
+  }
+
+  async function verifyAccess(page, options) {
+    options = options || {};
+    if (isLocalDev()) {
+      var local = localAccessOk();
+      if (options.redirect === false) return local;
+      return true;
+    }
+    try {
+      var url = "/.netlify/functions/check-access?page=" +
+        encodeURIComponent(page || "site");
+      var r = await fetch(url, { credentials: "include" });
+      if (!r.ok) {
+        return options.strict ? false : true;
+      }
+      var data = await r.json();
+      applyServerBalance(data);
+      if (options.redirect === false) return data;
+      return applyAccessResult(data);
+    } catch (_) {
+      return options.strict ? false : true;
+    }
+  }
+
+  function startAccessWatch(page, intervalMs) {
+    if (isLocalDev()) return;
+    setInterval(function () {
+      verifyAccess(page, { redirect: false }).then(function (data) {
+        if (!data || typeof data !== "object") return;
+        if (data.blocked) location.href = "/blocked.html";
+        else if (!data.hasAccess) location.href = "/bind.html";
+      }).catch(function () {});
+    }, intervalMs || 60000);
+  }
+
+  global.KaspiAccess = {
+    verifyAccess: verifyAccess,
+    applyAccessResult: applyAccessResult,
+    startAccessWatch: startAccessWatch,
   };
 })(window);
